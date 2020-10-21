@@ -73,6 +73,15 @@ class User(db.Model):
     )
 
     messages = db.relationship('Message', order_by='Message.timestamp.desc()')
+    """
+    relationship.primaryjoin argument, as well as the relationship.
+    secondaryjoin argument in the case when a “secondary” table is used.
+    """
+    # SELECT u.username, f.user_being_followed_id, f.user_following_id FROM users AS u
+    # JOIN follows AS f
+    # ON f.user_following_id = 179
+    # JOIN user AS u2
+    # ON f.user_being_followed_id = u.id;
 
     followers = db.relationship(
         "User",
@@ -81,6 +90,11 @@ class User(db.Model):
         secondaryjoin=(Follows.user_following_id == id)
     )
 
+    # SELECT u.username, f.user_being_followed_id, f.user_following_id FROM users AS u
+    # JOIN follows AS f
+    # ON f.user_being_followed_id = 179
+    # JOIN user AS u2
+    # ON f.user_following_id = u.id;
     following = db.relationship(
         "User",
         secondary="follows",

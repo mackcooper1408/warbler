@@ -112,12 +112,16 @@ def login():
 @app.route('/logout')
 def logout():
     """Handle logout of user."""
+    user_id = session[CURR_USER_KEY]
+    user = User.query.get(user_id)
+    do_logout()
+    flash(f"Successful Logout! Goodbye {user.username}!", "success")
 
-    # IMPLEMENT THIS
-
+    return redirect("/")
 
 ##############################################################################
 # General user routes:
+
 
 @app.route('/users')
 def list_users():
