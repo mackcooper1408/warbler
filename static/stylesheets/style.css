@@ -558,3 +558,14 @@ p.card-bio {
 .message-404 .form-inline input {
     flex: 1;
 }
+
+
+/* ================================ liked */
+
+#star,
+#thumb {
+    position: absolute;
+    left: 5px;
+    bottom: 5px;
+    z-index: 2000;
+}
