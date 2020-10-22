@@ -47,17 +47,24 @@ class MessageViewTestCase(TestCase):
                                     email="test@test.com",
                                     password="testuser",
                                     image_url=None)
-        self.test_user_2 = User.signup(username="testuser2",
-                                       email="test2@test.com",
-                                       password="testuser",
-                                       image_url=None)
+        self.testuser_2 = User.signup(username="testuser2",
+                                      email="test2@test.com",
+                                      password="testuser",
+                                      image_url=None)
 
-        db.session.add(self.testuser)
-        db.session.add(self.test_user_2)
+        db.session.add_all([self.testuser, self.testuser_2])
+        db.session.commit()
+
+        self.msg = Message(
+                text="message",
+                user_id=self.testuser.id
+            )
+
+        db.session.add(self.msg)
         db.session.commit()
 
     def test_add_message(self):
-        """Can use add a message?"""
+        """Can you add a message?"""
 
         # Since we need to change the session to mimic logging in,
         # we need to use the changing-session trick:
@@ -74,40 +81,73 @@ class MessageViewTestCase(TestCase):
             # Make sure it redirects
             self.assertEqual(resp.status_code, 302)
 
-            msg = Message.query.one()
-            self.assertEqual(msg.user_id, self.testuser.id)
-            self.assertEqual(msg.text, "Hello")
+            msgs = Message.query.all()
+            self.assertEqual(len(msgs), 2)
+ 
+    def test_add_message_no_login(self):
+        """Can you add a message?"""
+
+        # Since we need to change the session to mimic logging in,
+        # we need to use the changing-session trick:
+
+        with self.client as c:
+
+            # Now, that session setting is saved, so we can have
+            # the rest of ours test
+
+            resp = c.post("/messages/new",
+                          data={"text": "Hello"},
+                          follow_redirects=True)
+            html = resp.get_data(as_text=True)
+
+            msg = Message.query.all()
+            # Make sure it redirects
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(1, len(msg))
+            self.assertIn('<li><a href="/login">Log in</a></li>', html)
+
+    def test_delete_message(self):
+        """Can you delete a message?"""
+
+        # Since we need to change the session to mimic logging in,
+        # we need to use the changing-session trick:
+
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.testuser.id
+
+            # Now, that session setting is saved, so we can have
+            # the rest of ours test
+
+            resp = c.post("/messages/new", data={"text": "Hello"})
+
+            msg = Message.query.first()
+
+            c.post(f"/messages/{msg.id}/delete")
+
+            # Make sure it redirects
+            self.assertEqual(resp.status_code, 302)
+
+            msgs = Message.query.all()
+            self.assertEqual(1, len(msgs))
 
     # def test_like_message(self):
-    #     """Can use add a message?"""
+    #     """Can you like a message?"""
 
     #     # Since we need to change the session to mimic logging in,
     #     # we need to use the changing-session trick:
 
     #     with self.client as c:
-
     #         with c.session_transaction() as sess:
-    #             sess[CURR_USER_KEY] = self.testuser.id
+    #             sess[CURR_USER_KEY] = self.testuser_2.id
+            
+
     #         # Now, that session setting is saved, so we can have
     #         # the rest of ours test
-    #         m = Message(
-    #             text="message_test",
-    #             user_id=self.testuser.id
-    #         )
-    #         new_user = User.signup(username="testuser3",
-    #                                    email="test3@test.com",
-    #                                    password="testuser",
-    #                                    image_url=None)
+    #         resp = c.post(f"/messages/{msg.id}/like")
 
-    #         db.session.add_all([m, new_user])
-    #         db.session.commit()
-
-    #         msg = Message.query.one()
-    #         # do_login()
-    #         resp = c.post(f"/messages/{msg.id}/like", follow_redirects=True)
-    #         breakpoint()
     #         # Make sure it redirects
     #         self.assertEqual(resp.status_code, 302)
-    #         print(User.query.all())
-    #         print(msg.liked_by)
-    #         self.assertEqual(len(msg.liked_by), 1)
+
+    #         liked_msg = Message.query.get(self.msg.id)
+    #         self.assertEqual(len(liked_msg.liked_by), 0)
