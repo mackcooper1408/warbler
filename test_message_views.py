@@ -71,7 +71,7 @@ class MessageViewTestCase(TestCase):
 
         with self.client as c:
             with c.session_transaction() as sess:
-                sess[CURR_USER_KEY] = self.testuser.id
+                sess[CURR_USER_KEY] = self.testuser_2.id
 
             # Now, that session setting is saved, so we can have
             # the rest of ours test
@@ -83,7 +83,7 @@ class MessageViewTestCase(TestCase):
 
             msgs = Message.query.all()
             self.assertEqual(len(msgs), 2)
- 
+
     def test_add_message_no_login(self):
         """Can you add a message?"""
 
@@ -131,23 +131,45 @@ class MessageViewTestCase(TestCase):
             msgs = Message.query.all()
             self.assertEqual(1, len(msgs))
 
-    # def test_like_message(self):
-    #     """Can you like a message?"""
+    def test_get_message(self):
+        """Can you get a message?"""
 
-    #     # Since we need to change the session to mimic logging in,
-    #     # we need to use the changing-session trick:
+        # Since we need to change the session to mimic logging in,
+        # we need to use the changing-session trick:
 
-    #     with self.client as c:
-    #         with c.session_transaction() as sess:
-    #             sess[CURR_USER_KEY] = self.testuser_2.id
-            
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.testuser.id
 
-    #         # Now, that session setting is saved, so we can have
-    #         # the rest of ours test
-    #         resp = c.post(f"/messages/{msg.id}/like")
+            # Now, that session setting is saved, so we can have
+            # the rest of ours test
 
-    #         # Make sure it redirects
-    #         self.assertEqual(resp.status_code, 302)
+            msg = Message.query.one()
 
-    #         liked_msg = Message.query.get(self.msg.id)
-    #         self.assertEqual(len(liked_msg.liked_by), 0)
+            resp = c.get(f"/messages/{msg.id}")
+
+            # Make sure it redirects
+            self.assertEqual(resp.status_code, 200)
+
+            self.assertEqual("message", msg.text)
+
+    def test_like_message(self):
+        """Can you like a message?"""
+
+        # Since we need to change the session to mimic logging in,
+        # we need to use the changing-session trick:
+
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.testuser_2.id
+
+            # Now, that session setting is saved, so we can have
+            # the rest of ours test
+            msg = Message.query.one()
+            resp = c.post(f"/messages/{msg.id}/like")
+
+            # Make sure it redirects
+            self.assertEqual(resp.status_code, 302)
+
+            self.assertEqual(len(msg.liked_by), 1)
+            self.assertEqual(self.testuser_2.id, msg.liked_by[0].id)

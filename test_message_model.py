@@ -62,3 +62,17 @@ class MessageModelTestCase(TestCase):
         # Message should have a user owner & no likes
         self.assertEqual(m.user_id, self.user.id)
         self.assertEqual(len(m.liked_by), 0)
+
+    def test_message_like(self):
+        """Test Message Liked_by"""
+        m = Message(
+            text="message_test",
+            user_id=self.user.id
+        )
+        db.session.add(m)
+        db.session.commit()
+
+        m.liked_by.append(self.user)
+        db.session.commit()
+        self.assertIn(self.user_id, m.liked_by[0].id)
+        self.assertIn(m, self.user.liked_messages)

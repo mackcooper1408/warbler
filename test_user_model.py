@@ -46,7 +46,8 @@ class UserModelTestCase(TestCase):
         u = User(
             email="test@test.com",
             username="testuser",
-            password="HASHED_PASSWORD"
+            password="HASHED_PASSWORD",
+            image_url=None
         )
 
         db.session.add(u)
@@ -55,3 +56,60 @@ class UserModelTestCase(TestCase):
         # User should have no messages & no followers
         self.assertEqual(len(u.messages), 0)
         self.assertEqual(len(u.followers), 0)
+
+    def test_user_follow(self):
+        u1 = User(
+            email="test@test.com",
+            username="testuser",
+            password="HASHED_PASSWORD",
+            image_url=None
+        )
+        u2 = User(
+            email="test2@test.com",
+            username="testuser2",
+            password="HASHED_PASSWORD",
+            image_url=None
+        )
+
+        db.session.add_all([u1, u2])
+        db.session.commit()
+
+        self.assertEqual(u1.is_following(u2), False)
+        self.assertEqual(u2.is_followed_by(u1), False)
+
+        u1.following.append(u2)
+        db.session.commit()
+
+        self.assertEqual(u1.is_following(u2), True)
+        self.assertEqual(u2.is_followed_by(u1), True)
+
+    def test_user_signup(self):
+
+        u1 = User.signup(
+            email="test@test.com",
+            username="testuser",
+            password="HASHED_PASSWORD",
+            image_url=None
+        )
+
+        users = User.query.all()
+
+        self.assertIn(u1, users)
+
+    def test_user_authenticate(self):
+
+        u1 = User.signup(
+            email="test@test.com",
+            username="testuser",
+            password="HASHED_PASSWORD",
+            image_url=None
+        )
+
+        resp = User.authenticate("testuser", "HASHED_PASSWORD")
+        self.assertEquals(resp, u1)
+
+        resp = User.authenticate("testuser", "WRONG_PASSWORD")
+        self.assertEquals(resp, False)
+
+        resp = User.authenticate("WRONG_USER", "HASHED_PASSWORD")
+        self.assertEquals(resp, False)
