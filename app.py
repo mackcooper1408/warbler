@@ -320,13 +320,15 @@ def messages_like(message_id):
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    msg = Message.query.get(message_id)
+    msg = Message.query.get_or_404(message_id)
     if msg.user_id != g.user.id:
         g.user.liked_messages.append(msg)
 
         db.session.commit()
 
-    return redirect('/')
+    route = request.referrer
+
+    return redirect(f'{route}')
 
 
 @app.route('/messages/<int:message_id>/unlike', methods=["POST"])
@@ -337,13 +339,15 @@ def messages_unlike(message_id):
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    msg = Message.query.get(message_id)
+    msg = Message.query.get_or_404(message_id)
     if msg.user_id != g.user.id:
         g.user.liked_messages.remove(msg)
 
         db.session.commit()
 
-    return redirect('/')
+    route = request.referrer
+
+    return redirect(f'{route}')
 ##############################################################################
 # Homepage and error pages
 
