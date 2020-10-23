@@ -414,6 +414,7 @@ def homepage():
 ##############################################################################
 # Admin Pages
 
+
 @app.route('/admin')
 def admin():
     """ show all users with delete and edit button"""
@@ -461,7 +462,7 @@ def admin_edit_user(user_id):
     if form.validate_on_submit():
         form.populate_obj(user_to_edit)
         db.session.commit()
-        return redirect(url_for('admin_show_user',user_id=user_to_edit.id))
+        return redirect(url_for('admin_show_user', user_id=user_to_edit.id))
 
     return render_template('admin/edit_user.html', user=user_to_edit, form=form)
 
