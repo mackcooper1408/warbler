@@ -8,6 +8,40 @@ from flask_sqlalchemy import SQLAlchemy
 bcrypt = Bcrypt()
 db = SQLAlchemy()
 
+# One DirectMessage Per Friend
+# DirectMessage.msgs -> [(me:hi),(you:whats up), ]
+
+
+class DirectMessage(db.Model):
+    """Connection of a user_from <-> user_to."""
+
+    __tablename__ = 'direct_messages'
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    user_from_id = db.Column(
+        db.Integer,
+        db.ForeignKey('users.id', ondelete="cascade")
+    )
+
+    user_to_id = db.Column(
+        db.Integer,
+        db.ForeignKey('users.id', ondelete="cascade")
+    )
+
+    msg = db.Column(db.Text)
+
+    timestamp = db.Column(
+        db.DateTime,
+        default=datetime.utcnow()
+    )
+
+# app.py -> text_msg = MsgWithinDM("HELLO", creator = g.user.id)
+# dm =DirectMessage.query.get(users_from_id = g.user.id, user_to_id = other_user)
+# dm.msg.append(text_msg)
+
+# g.user.dm.msg[0] g.user.dm[1]
+
 
 class Follows(db.Model):
     """Connection of a follower <-> followed_user."""
@@ -37,6 +71,7 @@ class Likes(db.Model):
         db.ForeignKey('users.id', ondelete="cascade"),
         primary_key=True,
     )
+
     message_id = db.Column(
         db.Integer,
         db.ForeignKey('messages.id', ondelete="cascade"),
@@ -88,10 +123,25 @@ class User(db.Model):
         db.Text,
         nullable=False,
     )
+    # user.dm -> [DirectMessage(to:mack), DirectMessage(to:matt)]
+
+    # dms_to = db.relationship(
+    #     'Message',
+    #     secondary="direct_messages",
+    #     primaryjoin=(DirectMessage.user_to_id == id),
+    #     secondaryjoin=(DirectMessage.user_from_id == id)
+    # )
+
+    # dms_from = db.relationship(
+    #     'Message',
+    #     secondary="direct_messages",
+    #     primaryjoin=(DirectMessage.user_from_id == id),
+    #     secondaryjoin=(DirectMessage.user_to_id == id)
+    # )
 
     liked_messages = db.relationship('Message', secondary='likes')
 
-    messages = db.relationship('Message', order_by='Message.timestamp.desc()')
+    messages = db.relationship('Message', cascade="all, delete", passive_deletes=True, order_by='Message.timestamp.desc()')
     """
     relationship.primaryjoin argument, as well as the relationship.
     secondaryjoin argument in the case when a “secondary” table is used.
@@ -121,6 +171,8 @@ class User(db.Model):
         secondaryjoin=(Follows.user_being_followed_id == id)
     )
 
+
+
     def __repr__(self):
         return f"<User #{self.id}: {self.username}, {self.email}>"
 
@@ -135,6 +187,11 @@ class User(db.Model):
 
         found_user_list = [user for user in self.following if user == other_user]
         return len(found_user_list) == 1
+
+    def send_dm(self, other_user, msg):
+        new_dm = DirectMessage(user_from_id=self.id, user_to_id=other_user, msg=msg)
+        db.session.add(new_dm)
+        return new_dm
 
     @classmethod
     def signup(cls, username, email, password, image_url):
@@ -199,7 +256,7 @@ class Message(db.Model):
 
     user_id = db.Column(
         db.Integer,
-        db.ForeignKey('users.id', ondelete='CASCADE'),
+        db.ForeignKey('users.id', ondelete='cascade'),
         nullable=False,
     )
 
@@ -216,3 +273,24 @@ def connect_db(app):
 
     db.app = app
     db.init_app(app)
+
+
+# my message with to-user you
+# dm/your_user_id
+# your message (message.your_user_id) with to-user me
+# automatically user.messages.filter(to_user = me)
+# message with to-user none
+
+# SELECT * FROM messages AS m
+# JOIN users
+# ON m.user_to_id = 301 and m.user_from_id = 302
+
+# sent messages
+# SELECT dm.text, user_to_id, user_from_id FROM direct_messages AS dm
+# WHERE dm.user_from_id = aric AND dm.user_to_id = mack
+
+# SELECT * FROM direct_message as dm
+# JOIN users as u1
+# ON u1.id = direct_messsage.user_from_id
+# JOIN users as u2
+# ON u2.id = direct_messsage.user_to_id
