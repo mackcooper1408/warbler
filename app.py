@@ -411,7 +411,72 @@ def homepage():
 
     else:
         return render_template('home-anon.html')
+##############################################################################
+# Admin Pages
 
+
+@app.route('/admin')
+def admin():
+    """ show all users with delete and edit button"""
+    if not g.user.admin:
+        flash("You're not an admin!", "danger")
+        return redirect('/')
+
+    users = User.query.all()
+
+    return render_template('admin/all_users.html', users=users)
+
+
+@app.route('/admin/users/<int:user_id>/messages')
+def admin_show_messages(user_id):
+    """ show all messages related by user_id"""
+    if not g.user.admin:
+        flash("You're not an admin!", "danger")
+        return redirect('/')
+
+    messages = Message.query.filter(Message.user_id == user_id)
+    return render_template('', messages=messages)
+
+
+@app.route('/admin/edit/users/<int:user_id>')
+def admin_edit_user(user_id):
+    """ edit user profile, allow making user admin """
+    if not g.user.admin:
+        flash("You're not an admin!", "danger")
+        return redirect('/')
+
+    user_to_edit = User.query.get(user_id)
+    form = UserEditForm(obj=user_to_edit)
+
+    if form.validate_on_submit():
+        form.populate_obj(user_to_edit)
+        db.session.commit()
+
+    return render_template('', user=user_to_edit)
+
+
+@app.route('/admin/delete/users/<int:user_id>', methods=["POST"])
+def admin_delete_user(user_id):
+    """ Admin delete user profile """
+    if not g.user.admin:
+        return redirect('/')
+
+    user_to_delete = User.query.get(user_id)
+    db.session.delete(user_to_delete)
+    db.session.commit()
+    return redirect('/admin')
+
+
+@app.route('/admin/delete/messages/<int:message_id>', methods=["POST"])
+def admin_delete_message(message_id):
+    """ Admin delete user message """
+    if not g.user.admin:
+        return redirect('/')
+
+    message_to_delete = Message.query.get(message_id)
+    db.session.delete(message_to_delete)
+    db.session.commit()
+    return redirect('/admin')
 
 ##############################################################################
 # Turn off all caching in Flask
