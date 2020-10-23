@@ -125,19 +125,11 @@ class User(db.Model):
         nullable=False,
     )
 
-    # dms_to = db.relationship(
-    #     'Message',
-    #     secondary="direct_messages",
-    #     primaryjoin=(DirectMessage.user_to_id == id),
-    #     secondaryjoin=(DirectMessage.user_from_id == id)
-    # )
-
-    # dms_from = db.relationship(
-    #     'Message',
-    #     secondary="direct_messages",
-    #     primaryjoin=(DirectMessage.user_from_id == id),
-    #     secondaryjoin=(DirectMessage.user_to_id == id)
-    # )
+    admin = db.Column(
+        db.Boolean,
+        nullable=False,
+        default=False
+    )
 
     liked_messages = db.relationship('Message', secondary='likes')
 
