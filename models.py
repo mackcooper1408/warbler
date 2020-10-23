@@ -8,6 +8,7 @@ from flask_sqlalchemy import SQLAlchemy
 bcrypt = Bcrypt()
 db = SQLAlchemy()
 
+
 # One DirectMessage Per Friend
 # DirectMessage.msgs -> [(me:hi),(you:whats up), ]
 
@@ -123,7 +124,6 @@ class User(db.Model):
         db.Text,
         nullable=False,
     )
-    # user.dm -> [DirectMessage(to:mack), DirectMessage(to:matt)]
 
     # dms_to = db.relationship(
     #     'Message',

@@ -27,6 +27,8 @@ toolbar = DebugToolbarExtension(app)
 
 connect_db(app)
 
+db.create_all()
+
 
 ##############################################################################
 # User signup/login/logout
@@ -330,6 +332,27 @@ def messages_unlike(message_id):
     return redirect(f'{route}')
 
 
+@app.route('/direct_messages', methods=["GET"])
+@login_required
+def direct_message():
+
+    msgs = DirectMessage.query.filter(
+        or_(
+        DirectMessage.user_to_id == g.user.id,
+        DirectMessage.user_from_id == g.user.id)).all()
+
+    dm_list = []
+    for msg in msgs:
+        if msg.user_to_id == g.user.id:
+            dm_list.append(msg.user_from_id)
+        else:
+            dm_list.append(msg.user_to_id)
+
+    users = User.query.filter(User.id.in_(dm_list)).all()
+
+    return render_template("direct_messages/all_dms.html", dm_list=users, user=g.user)
+
+
 @app.route('/direct_messages/<int:other_user_id>', methods=["GET", "POST"])
 @login_required
 def direct_messages(other_user_id):
@@ -350,7 +373,7 @@ def direct_messages(other_user_id):
     if form.validate_on_submit():
         new_dm = g.user.send_dm(other_user=other_user_id, msg=form.text.data)
         db.session.commit()
-        
+
         route = request.referrer
 
         return redirect(f'{route}')
