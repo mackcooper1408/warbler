@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, TextAreaField
+from wtforms import StringField, PasswordField, TextAreaField, BooleanField
 from wtforms.validators import DataRequired, Email, Length, Optional
 
 
@@ -34,3 +34,4 @@ class UserEditForm(FlaskForm):
     header_image_url = StringField('Header Image URL', validators=[Optional()])
     bio = TextAreaField('Bio', validators=[Optional()])
     password = PasswordField('Password', validators=[Optional(), Length(min=6)])
+    admin = BooleanField('Admin Access')
