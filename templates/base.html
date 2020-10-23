@@ -47,6 +47,9 @@
                         <img src="{{ g.user.image_url }}" alt="{{ g.user.username }}">
                     </a>
                 </li>
+                {% if g.user.admin %}
+                <li><a href="/admin">Admin</a></li>
+                {% endif %}
                 <li><a href="/direct_messages">DMs</a></li>
                 <li><a href="/messages/new">New Message</a></li>
                 <li><a href="/logout">Log out</a></li>
