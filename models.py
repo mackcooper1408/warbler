@@ -9,10 +9,6 @@ bcrypt = Bcrypt()
 db = SQLAlchemy()
 
 
-# One DirectMessage Per Friend
-# DirectMessage.msgs -> [(me:hi),(you:whats up), ]
-
-
 class DirectMessage(db.Model):
     """Connection of a user_from <-> user_to."""
 
@@ -36,12 +32,6 @@ class DirectMessage(db.Model):
         db.DateTime,
         default=datetime.utcnow()
     )
-
-# app.py -> text_msg = MsgWithinDM("HELLO", creator = g.user.id)
-# dm =DirectMessage.query.get(users_from_id = g.user.id, user_to_id = other_user)
-# dm.msg.append(text_msg)
-
-# g.user.dm.msg[0] g.user.dm[1]
 
 
 class Follows(db.Model):
@@ -138,11 +128,6 @@ class User(db.Model):
     relationship.primaryjoin argument, as well as the relationship.
     secondaryjoin argument in the case when a “secondary” table is used.
     """
-    # SELECT u.username, f.user_being_followed_id, f.user_following_id FROM users AS u
-    # JOIN follows AS f
-    # ON f.user_following_id = 179
-    # JOIN user AS u2
-    # ON f.user_being_followed_id = u.id;
 
     followers = db.relationship(
         "User",
@@ -151,19 +136,12 @@ class User(db.Model):
         secondaryjoin=(Follows.user_following_id == id)
     )
 
-    # SELECT u.username, f.user_being_followed_id, f.user_following_id FROM users AS u
-    # JOIN follows AS f
-    # ON f.user_being_followed_id = 179
-    # JOIN user AS u2
-    # ON f.user_following_id = u.id;
     following = db.relationship(
         "User",
         secondary="follows",
         primaryjoin=(Follows.user_following_id == id),
         secondaryjoin=(Follows.user_being_followed_id == id)
     )
-
-
 
     def __repr__(self):
         return f"<User #{self.id}: {self.username}, {self.email}>"
@@ -265,24 +243,3 @@ def connect_db(app):
 
     db.app = app
     db.init_app(app)
-
-
-# my message with to-user you
-# dm/your_user_id
-# your message (message.your_user_id) with to-user me
-# automatically user.messages.filter(to_user = me)
-# message with to-user none
-
-# SELECT * FROM messages AS m
-# JOIN users
-# ON m.user_to_id = 301 and m.user_from_id = 302
-
-# sent messages
-# SELECT dm.text, user_to_id, user_from_id FROM direct_messages AS dm
-# WHERE dm.user_from_id = aric AND dm.user_to_id = mack
-
-# SELECT * FROM direct_message as dm
-# JOIN users as u1
-# ON u1.id = direct_messsage.user_from_id
-# JOIN users as u2
-# ON u2.id = direct_messsage.user_to_id
